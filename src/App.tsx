@@ -1,30 +1,52 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Footer from './components/Footer';
-import Home from './pages/Home';
-import ProjectsPage from './pages/ProjectsPage';
-import ProjectDetail from './pages/ProjectDetail';
-import BlogPage from './pages/BlogPage';
-import BlogDetail from './pages/BlogDetail';
-import { BottomNavBar } from './components/ui/bottom-nav-bar';
+import { useState } from 'react';
+import { ArrowUpRight, BriefcaseBusiness, Code2, Mail, MapPin, MoveRight, Newspaper, UserRound } from 'lucide-react';
+import { FaGithub as Github, FaLinkedin as Linkedin } from 'react-icons/fa';
+import { projects } from './data/projects';
+import { blogPosts } from './data/blog';
+import { experience } from './data/experience';
+import { skills } from './data/skills';
+
+type Section = 'Overview' | 'Projects' | 'Experience' | 'Skills' | 'Writing';
+const sections: { name: Section; icon: typeof UserRound }[] = [
+  { name: 'Overview', icon: UserRound }, { name: 'Projects', icon: BriefcaseBusiness },
+  { name: 'Experience', icon: Code2 }, { name: 'Skills', icon: Code2 }, { name: 'Writing', icon: Newspaper },
+];
 
 function App() {
-  return (
-    <Router>
-      <div className="min-h-screen bg-white flex flex-col">
-        <main className="flex-grow pb-24">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/projects/:slug" element={<ProjectDetail />} />
-            <Route path="/blog" element={<BlogPage />} />
-            <Route path="/blog/:slug" element={<BlogDetail />} />
-          </Routes>
-        </main>
-        <BottomNavBar />
-        <Footer />
+  const [section, setSection] = useState<Section>('Overview');
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [selectedPost, setSelectedPost] = useState<string | null>(null);
+  const [articlePage, setArticlePage] = useState(0);
+  const project = projects.find(p => p.slug === selectedProject);
+  const post = blogPosts.find(p => p.slug === selectedPost);
+  const articleSections = post?.content.split('\n\n') ?? [];
+  const articlePages = Array.from({ length: Math.ceil(articleSections.length / 2) }, (_, i) => articleSections.slice(i * 2, i * 2 + 2));
+
+  return <main className="portfolio-shell">
+    <aside className="rail">
+      <a className="monogram" href="#home" aria-label="Anshum Dev home">AD<span>.</span></a>
+      <nav aria-label="Portfolio sections">{sections.map(({ name, icon: Icon }) => <button key={name} className={section === name ? 'rail-link active' : 'rail-link'} onClick={() => { setSection(name); setSelectedPost(null); setSelectedProject(null); }} title={name}><Icon size={17}/><span>{name}</span></button>)}</nav>
+      <div className="rail-bottom"><a href="https://github.com/Anshum25" target="_blank" rel="noreferrer" aria-label="GitHub"><Github size={17}/></a><a href="https://linkedin.com/in/anshum-dev" target="_blank" rel="noreferrer" aria-label="LinkedIn"><Linkedin size={17}/></a></div>
+    </aside>
+
+    <section className="workspace" id="home">
+      <header className="topbar"><div><span className="eyebrow">PORTFOLIO / 2026</span><span className="crumb">{section}{project ? ` / ${project.title}` : post ? ` / ${post.title}` : ''}</span></div><a className="availability" href="mailto:anshum25506@gmail.com"><i/> Open to opportunities <ArrowUpRight size={14}/></a></header>
+      <div className="canvas">
+        {(project || post) ? project ? <article className="detail-view"><button className="back-link" onClick={() => setSelectedProject(null)}>? Back to projects</button><span className="eyebrow accent">{project.category} ? {project.year || 'Selected work'}</span><h1>{project.title}</h1><p className="detail-intro">{project.fullDescription || project.shortDescription}</p>{project.highlights?.length ? <div className="detail-block"><h3>Engineering highlights</h3><ul>{project.highlights.map(x => <li key={x}>{x}</li>)}</ul></div> : null}{project.architecture && <p className="detail-intro">{project.architecture}</p>}<div className="detail-block"><h3>Stack & tags</h3><div className="chips">{[...project.technologies, ...project.tags].map((x,i) => <span key={`${x}-${i}`}>{x}</span>)}</div></div>{project.githubUrl && <a className="text-link" href={project.githubUrl} target="_blank" rel="noreferrer">View source <ArrowUpRight size={14}/></a>}</article> : post ? <article className="article-reader"><header className="article-heading"><button className="back-link" onClick={() => { setSelectedPost(null); setArticlePage(0); }}>? All writing</button><div className="eyebrow accent">{post.category} <span>?</span> {post.date} <span>?</span> {post.readingTime}</div><h1>{post.title}</h1><p>{post.excerpt}</p></header><div className="article-paper">{articlePages[articlePage]?.map((part, index) => { const [heading, ...body] = part.split('\n'); return <section className="article-section" key={`${articlePage}-${index}`}><h2>{heading.replace(/^##\s*/, '')}</h2><p>{body.join(' ')}</p></section> })}<div className="article-pager"><span>PAGE {String(articlePage + 1).padStart(2, '0')} / {String(articlePages.length).padStart(2, '0')}</span><div><button disabled={articlePage === 0} onClick={() => setArticlePage(articlePage - 1)}>? Previous</button><button disabled={articlePage >= articlePages.length - 1} onClick={() => setArticlePage(articlePage + 1)}>Next ?</button></div></div></div><div className="article-tags">{post.tags.map(t=><span key={t}>{t}</span>)}</div></article> : null : <>          {section === 'Overview' && <div className="overview-grid">
+            <div className="intro-card"><div className="eyebrow accent"><i/> AI ENGINEER <span>·</span> SOFTWARE ENGINEER</div><h1>Building intelligent<br/>software systems<span className="period">.</span></h1><p className="lead">I’m Anshum Dev, a Computer Science student bridging AI and software engineering through practical products, reliable backends, and thoughtful systems.</p><div className="intro-actions"><a className="primary-link" href="mailto:anshum25506@gmail.com">Let’s talk <MoveRight size={16}/></a><a href="/resume.pdf" className="secondary-link">Download resume <ArrowUpRight size={14}/></a><a className="social-action" href="https://github.com/Anshum25" target="_blank" rel="noreferrer"><Github size={14}/> GitHub</a><a className="social-action" href="https://linkedin.com/in/anshum-dev" target="_blank" rel="noreferrer"><Linkedin size={14}/> LinkedIn</a></div><div className="location"><MapPin size={14}/> Ahmedabad, Gujarat, India <span>·</span> B.Tech Computer Science & Technology, L.J. Institute · 2027</div></div>
+            <div className="side-stack"><section className="mini-card profile-card"><div className="card-head"><span>01 / PROFILE</span><span className="live-dot"/></div><h2>AI Intern <span>at NivaSync Infotech</span></h2><p>Building enterprise AI solutions, backend services, and ERPNext customizations.</p><div className="focus-line">AI engineering <b/> Backend systems <b/> Enterprise software</div></section><section className="mini-card"><div className="card-head"><span>02 / CURRENT FOCUS</span><span>4 AREAS</span></div><div className="focus-list"><div><strong>01</strong><span>AI engineering<small>LLMs · RAG · semantic search</small></span></div><div><strong>02</strong><span>Backend systems<small>APIs · auth · data pipelines</small></span></div><div><strong>03</strong><span>Software development<small>React · TypeScript · Next.js</small></span></div><div><strong>04</strong><span>Enterprise systems<small>ERPNext · workflows · automation</small></span></div></div></section></div>
+            <section className="overview-projects"><div className="section-head"><div><span className="eyebrow">03 / SELECTED WORK</span><h2>Projects <span className="count">09</span></h2></div><button onClick={()=>setSection('Projects')}>All projects <MoveRight size={15}/></button></div><div className="project-strip">{projects.slice(0,4).map((p,i)=><button className="project-tile" key={p.id} onClick={()=>setSelectedProject(p.slug)}><span className="tile-number">0{i+1} / {p.category}</span><strong>{p.title}</strong><small>{p.shortDescription}</small><span className="tile-arrow"><ArrowUpRight size={15}/></span></button>)}</div></section>
+            <section className="overview-bottom"><div><span className="eyebrow">04 / EXPERIENCE</span><h2>{experience.length} roles <span>· AI & full stack</span></h2><button className="simple-link" onClick={()=>setSection('Experience')}>See experience <MoveRight size={14}/></button></div><div><span className="eyebrow">05 / WRITING</span><h2>{blogPosts.length} engineering notes <span>· Drafts</span></h2><button className="simple-link" onClick={()=>setSection('Writing')}>Browse writing <MoveRight size={14}/></button></div><div className="social-links"><span className="eyebrow">LET’S CONNECT</span><a href="mailto:anshum25506@gmail.com"><Mail size={15}/> Email</a><a href="https://github.com/Anshum25" target="_blank" rel="noreferrer"><Github size={15}/> GitHub</a><a href="https://linkedin.com/in/anshum-dev" target="_blank" rel="noreferrer"><Linkedin size={15}/> LinkedIn</a></div></section>
+          </div>}
+          {section === 'Projects' && <div className="list-view"><div className="view-title"><span className="eyebrow accent">SELECTED WORK / 09</span><h1>Projects</h1><p>AI products, backend platforms, and enterprise software.</p></div><div className="project-list">{projects.map((p,i)=><button key={p.id} className="project-row" onClick={()=>setSelectedProject(p.slug)}><span className="row-num">{String(i+1).padStart(2,'0')}</span><div><span className="eyebrow">{p.category}</span><h2>{p.title}</h2><p>{p.shortDescription}</p><div className="chips">{p.technologies.map(t=><span key={t}>{t}</span>)}</div></div><ArrowUpRight size={17}/></button>)}</div></div>}
+          {section === 'Experience' && <div className="list-view"><div className="view-title"><span className="eyebrow accent">CAREER / EXPERIENCE</span><h1>Where I’ve worked</h1><p>Building useful software across AI, web, and enterprise workflows.</p></div><div className="experience-list">{experience.map((job,i)=><article className="experience-card" key={job.id}><div className="experience-meta"><span className="eyebrow">0{i+1} / {job.period}</span><span>{job.location}</span></div><div><h2>{job.role}</h2><h3>{job.company}</h3><ul>{job.responsibilities.map(r=><li key={r}>{r}</li>)}</ul></div></article>)}</div><div className="education-card"><span className="eyebrow">EDUCATION</span><strong>B.Tech — Computer Science & Technology</strong><span>L.J. Institute of Engineering & Technology · Ahmedabad · 2023–2027</span></div></div>}
+          {section === 'Skills' && <div className="list-view"><div className="view-title"><span className="eyebrow accent">TOOLKIT / ENGINEERING</span><h1>Technical skills</h1><p>Technologies and domains I use to take projects from idea to deployment.</p></div><div className="skills-grid">{Object.entries(skills).map(([group,items],i)=><section className="skill-group" key={group}><span className="eyebrow">0{i+1} / {group}</span><div className="chips">{items.map(item=><span key={item}>{item}</span>)}</div></section>)}<section className="skill-group"><span className="eyebrow">08 / AI & ENGINEERING</span><div className="chips">{['Generative AI','Large Language Models','NLP','Embeddings','Semantic Search','Prompt Engineering','Feature Engineering','XGBoost','SHAP','REST APIs','Backend Architecture','JWT Authentication','Framer Motion','Manufacturing','Quality Management','Inventory','Purchase','Sales','AWS — Basic'].map(item=><span key={item}>{item}</span>)}</div></section></div></div>}
+          {section === 'Writing' && <div className="list-view"><div className="view-title"><span className="eyebrow accent">WRITING / 05</span><h1>Engineering articles</h1><p>Long-form notes on AI engineering, backend systems, and lessons from building.</p></div><div className="writing-list">{blogPosts.map((p,i)=><button key={p.slug} className="writing-row" onClick={()=>{setSelectedPost(p.slug);setArticlePage(0);}}><span className="row-num">{String(i+1).padStart(2,'0')}</span><div><span className="eyebrow">{p.category} · {p.readingTime} · {p.date}</span><h2>{p.title}</h2><p>{p.excerpt}</p><div className="chips">{p.tags.map(t=><span key={t}>{t}</span>)}</div></div><ArrowUpRight size={17}/></button>)}</div></div>}
+        </>}
       </div>
-    </Router>
-  );
+      <footer className="footerbar"><span>ANSHUM DEV <b>·</b> AI ENGINEER & SOFTWARE ENGINEER</span><span>“There is so much left to build.”</span><span><a href="https://x.com/TheAnshumDev" target="_blank" rel="noreferrer">X <ArrowUpRight size={12}/></a><a href="mailto:anshum25506@gmail.com">CONTACT <ArrowUpRight size={12}/></a></span></footer>
+    </section>
+  </main>;
 }
 
 export default App;
